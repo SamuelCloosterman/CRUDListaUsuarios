@@ -60,7 +60,16 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+
+        <dependency>
+            <groupId>org.javalite</groupId>
+            <artifactId>activejdbc</artifactId>
+            <version>3.0</version>
+        </dependency>
+
+
+
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -104,7 +113,20 @@
 					</execution>
 				</executions>
 			</plugin>
-		</plugins>
-	</build>
+            <plugin>
+                <groupId>org.javalite</groupId>
+                <artifactId>activejdbc-instrumentation</artifactId>
+                <version>LATEST_VERSION</version>
+                <executions>
+                    <execution>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>instrument</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
+        </plugins>
+	</build>
 </project>

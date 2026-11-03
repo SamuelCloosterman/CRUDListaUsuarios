@@ -31,6 +31,9 @@ public class UserController {
 
     @PostMapping("/create")
     public String userCreate(@ModelAttribute User user) {
+        System.out.println("$$$$$$$$$$$$$$$$$$");
+        System.out.println(user.getId());
+        System.out.println(user.getCpf());
 
         user.setId((long) listUser.size() + 1);
 
