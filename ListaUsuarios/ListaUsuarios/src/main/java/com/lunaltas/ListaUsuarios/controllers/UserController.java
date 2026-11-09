@@ -1,6 +1,8 @@
 package com.lunaltas.ListaUsuarios.controllers;
 
+import com.lunaltas.ListaUsuarios.controllers.UserController;
 import com.lunaltas.ListaUsuarios.model.User;
+import org.javalite.activejdbc.Base;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +16,46 @@ public class UserController {
 
     private List<User> listUser = new ArrayList<>();
 
+
     @GetMapping("/index")
     public String index(ModelMap model) {
-        model.addAttribute("users", listUser);
-        model.addAttribute("userSize", listUser.size());
+
+        try {
+            Base.open("org.sqlite.JDBC", "jdbc:sqlite:meu_app.db", "", "");
+
+            List<User> users = new ArrayList<>(User.findAll());
+
+            model.addAttribute("users", users);
+            model.addAttribute("userSize", User.count());
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+
+        } finally {
+            Base.close();
+        }
 
         return "users/index";
     }
+
+    @PostMapping("/create")
+    public String userCreate(@ModelAttribute User user) {
+
+        try {
+            Base.open("org.sqlite.JDBC", "jdbc:sqlite:meu_app.db", "", "");
+
+            user.saveIt();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+
+        } finally {
+            Base.close();
+        }
+
+        return "redirect:/users/index";
+    }
+
 
     @GetMapping("/new")
     public String userNew(ModelMap model) {
