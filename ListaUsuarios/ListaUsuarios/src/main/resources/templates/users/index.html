@@ -18,7 +18,7 @@
 
     <h1>
         Lista de Usuários
-        (<span th:text="${userSize}">0</span>)
+        (<span th:text="${userSize}"></span>)
     </h1>
 
     <hr>
@@ -37,10 +37,10 @@
 
         <tbody>
 
-        <tr th:each="user : ${users}">
+        <tr th:each="user, status : ${users}">
 
             <th scope="row"
-                th:text="${user.id}">
+                th:text="${status.count}">
                 1
             </th>
 
@@ -63,10 +63,14 @@
                     Editar
                 </a>
 
-                <a th:href="@{'/users/delete/' + ${user.id}}"
-                   class="btn btn-danger btn-sm">
-                    Excluir
-                </a>
+                <form th:action="@{/users/delete/{id}(id=${user.id})}"
+                      method="post"
+                      style="display: inline;">
+
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Excluir
+                    </button>
+                </form>
 
             </td>
 

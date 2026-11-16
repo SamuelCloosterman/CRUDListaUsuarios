@@ -30,7 +30,7 @@ public class DataInitializer implements CommandLineRunner {
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(56),
                     arroba VARCHAR(56),
-                    cpf VARCHAR(14)
+                    cpf VARCHAR(14) UNIQUE
                 )
                 """;
 

@@ -6,6 +6,7 @@ import org.javalite.activejdbc.Base;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,25 +39,6 @@ public class UserController {
         return "users/index";
     }
 
-    @PostMapping("/create")
-    public String userCreate(@ModelAttribute User user) {
-
-        try {
-            Base.open("org.sqlite.JDBC", "jdbc:sqlite:meu_app.db", "", "");
-
-            user.saveIt();
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-
-        } finally {
-            Base.close();
-        }
-
-        return "redirect:/users/index";
-    }
-
-
     @GetMapping("/new")
     public String userNew(ModelMap model) {
         model.addAttribute("user", new User());
@@ -64,53 +46,169 @@ public class UserController {
         return "users/new";
     }
 
+
     @PostMapping("/create")
     public String userCreate(@ModelAttribute User user) {
-        System.out.println("$$$$$$$$$$$$$$$$$$");
-        System.out.println(user.getId());
-        System.out.println(user.getCpf());
 
-        user.setId((long) listUser.size() + 1);
+        boolean conectado = false;
 
-        listUser.add(user);
+        try {
+            Base.open(
+                    "org.sqlite.JDBC",
+                    "jdbc:sqlite:meu_app.db",
+                    "",
+                    ""
+            );
 
-        return "redirect:/users/index";
-    }
+            conectado = true;
 
-    @GetMapping("/edit/{id}")
-    public String userEdit(@PathVariable Long id, ModelMap model) {
+            System.out.println("Nome: " + user.getName());
+            System.out.println("Arroba: " + user.getArroba());
+            System.out.println("CPF: " + user.getCpf());
 
-        for (User user : listUser) {
+            user.saveIt();
 
-            if (user.getId().equals(id)) {
-                model.addAttribute("user", user);
+            System.out.println("ID gerado: " + user.getId());
+            System.out.println("Total no banco: " + User.count());
 
-                return "users/edit";
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+
+        } finally {
+            if (conectado) {
+                Base.close();
             }
         }
 
         return "redirect:/users/index";
+    }
+
+
+    @GetMapping("/edit/{id}")
+    public String userEdit(@PathVariable Long id, ModelMap model) {
+
+        boolean conectado = false;
+
+        try {
+            Base.open("org.sqlite.JDBC", "jdbc:sqlite:meu_app.db", "", "");
+            conectado = true;
+
+            User user = User.findFirst("id = ?", id);
+
+            if (user == null) {
+                return "redirect:/users/index";
+            }
+
+            model.addAttribute("user", user);
+
+            model.addAttribute("id", user.get("id"));
+            model.addAttribute("name", user.get("name"));
+            model.addAttribute("arroba", user.get("arroba"));
+            model.addAttribute("cpf", user.get("cpf"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+
+        } finally {
+            if (conectado) {
+                Base.close();
+            }
+        }
+
+        return "users/edit";
     }
 
     @PostMapping("/update")
     public String userUpdate(@ModelAttribute User user) {
 
-        for (int i = 0; i < listUser.size(); i++) {
+        boolean conectado = false;
 
-            if (listUser.get(i).getId().equals(user.getId())) {
-                listUser.set(i, user);
+        try {
+            Base.open(
+                    "org.sqlite.JDBC",
+                    "jdbc:sqlite:meu_app.db",
+                    "",
+                    ""
+            );
 
-                break;
+            conectado = true;
+
+            Base.exec("""
+            UPDATE users
+            SET name = ?, arroba = ?, cpf = ?
+            WHERE id = ?
+            """,
+                    user.getName(),
+                    user.getArroba(),
+                    user.getCpf(),
+                    user.getId()
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+
+        } finally {
+            if (conectado) {
+                Base.close();
             }
         }
 
         return "redirect:/users/index";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String userDelete(@PathVariable Long id) {
 
-        listUser.removeIf(user -> user.getId().equals(id));
+        boolean conectado = false;
+
+        try {
+            Base.open(
+                    "org.sqlite.JDBC",
+                    "jdbc:sqlite:meu_app.db",
+                    "",
+                    ""
+            );
+
+            conectado = true;
+
+            Base.exec("DELETE FROM users WHERE id = ?", id);
+
+            Base.exec("CREATE TEMP TABLE users_backup AS SELECT * FROM users");
+
+            Base.exec("DELETE FROM users");
+
+            Base.exec("""
+                INSERT INTO users (id, name, arroba, cpf)
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY id),
+                    name,
+                    arroba,
+                    cpf
+                FROM users_backup
+            """);
+
+            Base.exec("DROP TABLE users_backup");
+
+            Base.exec("""
+                UPDATE sqlite_sequence
+                SET seq = (SELECT COUNT(*) FROM users)
+                WHERE name = 'users'
+            """);
+
+            System.out.println("Usuário excluído. ID: " + id);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+
+        } finally {
+            if (conectado) {
+                Base.close();
+            }
+        }
 
         return "redirect:/users/index";
     }
